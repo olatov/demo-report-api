@@ -89,7 +89,7 @@ procedure HandleReport(ARequest: TRequest; AResponse: TResponse);
 
         SetLength(AModel.Bars.Labels, BarCount);
         SetLength(AModel.Bars.Values, BarCount);
-        AModel.Bars.MaxValue := Single.MinValue;
+        AModel.Bars.MaxValue := 0;
         for I := 0 to BarCount - 1 do
         begin
           AModel.Bars.Labels[I] := Bars.Items[I].GetPath('label').AsString;
@@ -158,7 +158,11 @@ procedure HandleReport(ARequest: TRequest; AResponse: TResponse);
           Page.SetColor(AReport.Bars.Color);
           Page.SetColor(AReport.Bars.Color, False);
 
-          BarHeight := AReport.Bars.Values[I] / AReport.Bars.MaxValue * ChartHeight;
+          if not IsZero(AReport.Bars.MaxValue) then
+            BarHeight := Max(AReport.Bars.Values[I], 0) / AReport.Bars.MaxValue * ChartHeight
+          else
+            BarHeight := 0;
+
           Page.DrawRect(
             30 + (ColWidth * I), 148,
             ColWidth * 0.5,
