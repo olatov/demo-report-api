@@ -19,7 +19,7 @@ uses
 const
   FontFile = './LibreFranklin-Medium.ttf';
   FontName = 'Libre Franklin';
-  ChartWidth = 176;
+  ChartWidth = 170;
   ChartHeight = 80;
   DefaultBarColor = clBlue;
   DefaultPort = 5050;
@@ -112,6 +112,7 @@ procedure HandleReport(ARequest: TRequest; AResponse: TResponse);
     Section: TPDFSection;
     Font, I, Logo: Integer;
     ColWidth, BarHeight: Single;
+    Total: Double;
   begin
     Result := TPDFDocument.Create(Nil);
     try
@@ -138,18 +139,18 @@ procedure HandleReport(ARequest: TRequest; AResponse: TResponse);
       { Title }
       Page.SetFont(Font, 36);
       Page.SetColor(clMaroon, False);
-      Page.WriteText(20, 24, AReport.Title);
+      Page.WriteText(20, 22, AReport.Title);
 
       { Subtitle }
       Page.SetFont(Font, 18);
       Page.SetColor(clBlack, False);
-      Page.WriteText(20, 36, AReport.Subtitle);
+      Page.WriteText(20, 32, AReport.Subtitle);
 
       { Bars }
       if Length(AReport.Bars.Values) > 0 then
       begin
         Page.SetColor(clLtGray, True);
-        Page.DrawRect(20, 172, 180, 116, 0.25, False, True);
+        Page.DrawRect(20, 172, 172, 116, 0.25, False, True);
 
         ColWidth := ChartWidth / Length(AReport.Bars.Values);
 
@@ -163,25 +164,33 @@ procedure HandleReport(ARequest: TRequest; AResponse: TResponse);
           else
             BarHeight := 0;
 
-          Page.DrawRect(
-            30 + (ColWidth * I), 148,
-            ColWidth * 0.5,
-            BarHeight,
-            0.5, True, True);
+          if BarHeight > 0 then
+            Page.DrawRect(
+              28 + (ColWidth * I), 148,
+              ColWidth * 0.5,
+              BarHeight,
+              0.5, True, True);
 
           Page.SetColor(clBlack, False);
 
           Page.SetFont(Font, 16);
           Page.WriteText(
-            30 + (ColWidth * I), 158,
+            27 + (ColWidth * I), 158,
             AReport.Bars.Labels[I]);
 
           Page.SetFont(Font, 12);
-          Page.SetColor(clGreen, False);
+          Page.SetColor(IfThen<TARGBColor>(AReport.Bars.Values[I] >= 0, clGreen, clRed), False);
           Page.WriteText(
-            30 + (ColWidth * I), 166,
+            28 + (ColWidth * I), 166,
             Format('%.2n', [AReport.Bars.Values[I]]));
         end;
+
+        Total := Sum(AReport.Bars.Values);
+        Page.SetFont(Font, 16);
+        Page.SetColor(clBlack, False);
+        Page.WriteText(135, 50, 'Total: ');
+        Page.SetColor(IfThen<TARGBColor>(Total >= 0, clGreen, clRed), False);
+        Page.WriteText(155, 50, Format('%.2n', [Total]));
       end;
     except
       begin
