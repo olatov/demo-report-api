@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <title>Test Report API</title>
+</head>
+
+<body>
+  <main class="container">
+    <h1>Test Report API</h1>
+    <form>
+      <button type="button" onclick="createReport()">Create report</button>
+      <button type="button" onclick="randomizeValuesOnly()">Randomize values</button>
+      <label for="reportData">Report Data (JSON):</label>
+      <textarea id="reportData" name="reportData" rows="16" cols="50">
+        {}
+      </textarea>
+    </form>
+  </main> 
+
+  <script>
+    function randomBetween(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function generateRealisticBars() {
+      const monthlyRanges = [
+        { label: 'January', min: 1300, max: 1700 },
+        { label: 'February', min: 1400, max: 1800 },
+        { label: 'March', min: 1500, max: 2000 },
+        { label: 'April', min: 1700, max: 2300 },
+        { label: 'May', min: 1600, max: 2200 },
+        { label: 'June', min: 1800, max: 2500 }
+      ];
+
+      return monthlyRanges.map(month => ({
+        label: month.label,
+        value: Number(randomBetween(month.min, month.max).toFixed(2))
+      }));
+    }
+
+    function fillSampleReportData() {
+      const currentYear = new Date().getFullYear();
+      const sampleData = {
+        title: 'Circles Inc.',
+        subtitle: 'Monthly Sales Report',
+        logo: 'circles.png',
+        barColor: '#4f46e5',
+        bars: generateRealisticBars()
+      };
+
+      document.getElementById('reportData').value = JSON.stringify(sampleData, null, 2);
+    }
+
+    function randomizeValuesOnly() {
+      const monthRangeByLabel = {
+        January: { min: 500, max: 9999 },
+        February: { min: 500, max: 9999 },
+        March: { min: 500, max: 9999 },
+        April: { min: 500, max: 9999 },
+        May: { min: 500, max: 9999 },
+        June: { min: 500, max: 9999 }
+      };
+
+      const textarea = document.getElementById('reportData');
+
+      try {
+        const data = JSON.parse(textarea.value);
+
+        if (!Array.isArray(data.bars) || data.bars.length === 0) {
+          fillSampleReportData();
+          return;
+        }
+
+        data.bars = data.bars.map(bar => {
+          const range = monthRangeByLabel[bar.label] || { min: 500, max: 5000 };
+          return {
+            ...bar,
+            value: Number(randomBetween(range.min, range.max).toFixed(2))
+          };
+        });
+
+        textarea.value = JSON.stringify(data, null, 2);
+      } catch {
+        fillSampleReportData();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', fillSampleReportData);
+
+    async function createReport() {
+      const reportData = document.getElementById('reportData').value;
+      const response = await fetch('report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: reportData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get('Content-Disposition') || '';
+      const filenameMatch = contentDisposition.match(/filename\*?=(?:UTF-8''|\")?([^\";]+)/i);
+      const filename = filenameMatch ? decodeURIComponent(filenameMatch[1].replace(/\"/g, '')) : 'report.pdf';
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+
+</html>

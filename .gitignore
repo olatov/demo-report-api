@@ -1,0 +1,8 @@
+backup/
+lib/
+bin/
+*.o
+*.lps
+*.res
+*.exe
+demoreportapi

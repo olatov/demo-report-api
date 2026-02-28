@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    restart: unless-stopped
+    ports:
+      - 5050:5050
